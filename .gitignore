@@ -10,7 +10,7 @@ __pycache__/
 *.csv
 *.xlsx
 *.xls
-数据预处理/2509010001-2606142359-已检测/
+**/2509010001-2606142359-*/
 
 # Experiment/model outputs
 outputs/
@@ -44,4 +44,4 @@ Thumbs.db
 # Local notes / temporary office files
 *.tmp
 ~$*
-多标签质量预测记录.pptx
+*.pptx
