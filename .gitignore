@@ -6,6 +6,27 @@ __pycache__/
 # Jupyter
 .ipynb_checkpoints/
 
+# Data files
+*.csv
+*.xlsx
+*.xls
+数据预处理/2509010001-2606142359-已检测/
+
+# Experiment/model outputs
+outputs/
+results/
+runs/
+logs/
+checkpoints/
+models/
+*.log
+*.pkl
+*.pickle
+*.joblib
+*.pt
+*.pth
+*.onnx
+
 # Virtual environments
 .venv/
 venv/
@@ -16,5 +37,11 @@ env/
 .env.*
 
 # OS/editor noise
+.vscode/
 .DS_Store
 Thumbs.db
+
+# Local notes / temporary office files
+*.tmp
+~$*
+多标签质量预测记录.pptx
