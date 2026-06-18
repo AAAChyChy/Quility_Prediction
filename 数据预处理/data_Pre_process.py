@@ -1,6 +1,14 @@
 import pandas as pd
 import numpy as np
 import os
+from sklearn.model_selection import train_test_split
+
+# import random
+# import torch
+# # 固定所有随机数生成器
+# random.seed(42)
+# np.random.seed(42)
+# torch.manual_seed(42)
 
 # 获取当前脚本所在文件夹的绝对路径
 current_path = os.path.dirname(os.path.abspath(__file__))
@@ -38,7 +46,6 @@ def clip_outliers_iqr(df, columns, factor=1.5):
 # 特征与标签
 Data_features = Data.iloc[:, 3:145]
 Data_labels = Data.iloc[:, 145:150]
-# 特征对数字特征进行异常值处理
 num_columns = [
     "大包氩气流量",
     "大包氩气压力",
@@ -160,7 +167,7 @@ num_columns = [
     "平均拉速33to34m",
     "平均拉速34to35m",
 ]
-
+# 特征对数字特征进行异常值处理
 Data_features = clip_outliers_iqr(Data_features, num_columns)
 
 # 连续特征标准化数据, 将缺失值设置为0
@@ -181,7 +188,6 @@ object_columns = [
 ]
 # 转成字符串，避免被当作连续数值
 Data_features[object_columns] = Data_features[object_columns].astype(str)
-
 # 独热编码
 Data_features = pd.get_dummies(
     Data_features, columns=object_columns, dummy_na=False, dtype=int
@@ -190,3 +196,18 @@ data_all = pd.concat([Data_features, Data_labels], axis=1)
 current_path_csv = os.path.join(parent_path, "Data_V1.csv")
 data_all.to_csv(current_path_csv, index=False, encoding="utf-8-sig")
 print(f"Data_V1.csv 已保存到 {current_path_csv} 中")
+
+# 按4：1划分训练集和测试集
+X_train, X_test, y_train, y_test = train_test_split(
+    Data_features, Data_labels, test_size=0.2, random_state=42, shuffle=False
+)
+train_data = pd.concat([X_train, y_train], axis=1)
+test_data = pd.concat([X_test, y_test], axis=1)
+train_data.to_csv(
+    os.path.join(parent_path, "train_Data_V1.csv"), index=False, encoding="utf-8-sig"
+)
+test_data.to_csv(
+    os.path.join(parent_path, "test_Data_V1.csv"), index=False, encoding="utf-8-sig"
+)
+print("训练集：", train_data.shape)
+print("测试集：", test_data.shape)
