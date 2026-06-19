@@ -4,6 +4,7 @@ __pycache__/
 *.pyo
 
 # Jupyter
+*.ipynb
 .ipynb_checkpoints/
 
 # Data files

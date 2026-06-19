@@ -2,11 +2,12 @@ import pandas as pd
 import numpy as np
 import os
 from sklearn.model_selection import train_test_split
+from itertools import combinations
+import random
 
-# import random
 # import torch
 # # 固定所有随机数生成器
-# random.seed(42)
+random.seed(42)
 # np.random.seed(42)
 # torch.manual_seed(42)
 
@@ -19,6 +20,7 @@ file_path = os.path.join(parent_path, "Data_V0.csv")
 Data = pd.read_csv(file_path, low_memory=False)
 
 
+############################################# 数据清洗#####################################
 def clip_outliers_iqr(df, columns, factor=1.5):
     """对指定数值列使用 IQR 方法，将越界值拉回上下边界。"""
     result = df.copy()
@@ -43,7 +45,6 @@ def clip_outliers_iqr(df, columns, factor=1.5):
     return result
 
 
-# 特征与标签
 Data_features = Data.iloc[:, 3:145]
 Data_labels = Data.iloc[:, 145:150]
 num_columns = [
@@ -169,7 +170,7 @@ num_columns = [
 ]
 # 特征对数字特征进行异常值处理
 Data_features = clip_outliers_iqr(Data_features, num_columns)
-
+############################################# 特征与标签#####################################
 # 连续特征标准化数据, 将缺失值设置为0
 Data_features[num_columns] = Data_features[num_columns].apply(
     lambda x: (x - x.mean()) / (x.std())
@@ -192,12 +193,54 @@ Data_features[object_columns] = Data_features[object_columns].astype(str)
 Data_features = pd.get_dummies(
     Data_features, columns=object_columns, dummy_na=False, dtype=int
 )
+############################################标签转成有无该缺陷的二分类####################################################
+
+crack_labels = ["中间裂纹", "三角区裂纹", "角部裂纹"]
+center_labels = ["中心偏析", "中心疏松"]
+# 裂纹：0 为无缺陷，非 0 为有缺陷
+Data_labels[crack_labels] = Data_labels[crack_labels].ne(0).astype(int)
+# 偏析、疏松：0.5 为无缺陷，大于 0.5 为有缺陷
+Data_labels[center_labels] = Data_labels[center_labels].gt(0.5).astype(int)
+
+# 在最后面加一列板坯含有的缺陷类型
+label_columns = ["中间裂纹", "三角区裂纹", "角部裂纹", "中心偏析", "中心疏松"]
+# 确保标签只有 0 和 1
+Data_labels[label_columns] = Data_labels[label_columns].astype(int)
+# 建立缺陷组合与编号的映射
+combination_to_code = {(): 0}
+code_to_combination = {0: "无缺陷"}
+code = 1
+for combination_size in range(1, len(label_columns) + 1):
+    for combination in combinations(label_columns, combination_size):
+        combination_to_code[combination] = code
+        code_to_combination[code] = "+".join(combination)
+        code += 1
+
+
+def get_defect_type(row):
+    active_defects = tuple(label for label in label_columns if row[label] == 1)
+    return combination_to_code[active_defects]
+
+
+# 生成缺陷类型列
+Data_labels["缺陷类型"] = Data_labels.apply(get_defect_type, axis=1)
+
 data_all = pd.concat([Data_features, Data_labels], axis=1)
 current_path_csv = os.path.join(parent_path, "Data_V1.csv")
 data_all.to_csv(current_path_csv, index=False, encoding="utf-8-sig")
-print(f"Data_V1.csv 已保存到 {current_path_csv} 中")
 
-# 按4：1划分训练集和测试集
+print(Data_labels.apply(pd.Series.value_counts))
+print(f"Data_V1.csv 已保存到 {current_path_csv} 中")
+print("缺陷类型对应关系：")
+for code, defect_name in code_to_combination.items():
+    print(f"{code}: {defect_name}")
+
+print("\n各缺陷类型样本数量：")
+print(Data_labels["缺陷类型"].value_counts().sort_index())
+
+print(f"\nData_V1.csv 已保存到 {current_path_csv} 中")
+
+##################################### 按4：1划分训练集和测试集###########################################
 X_train, X_test, y_train, y_test = train_test_split(
     Data_features, Data_labels, test_size=0.2, random_state=42, shuffle=False
 )
